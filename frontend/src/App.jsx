@@ -1,0 +1,1 @@
+import React from 'react'; export default function App() { return (<div style={{ minHeight: '100vh', backgroundColor: '#030611', color: '#00f0ff', fontFamily: 'monospace', padding: '24px' }}><h1>CyberMachina // Neural CNC Twin</h1><p>Status: HEALTHY // NOMINAL</p></div>); }
