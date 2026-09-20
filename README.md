@@ -1,14 +1,10 @@
 # CyberMachina // Neural CNC Twin
 
-[![Live Demo](https://img.shields.io/badge/vercel-live%20demo-00f0ff?style=for-the-badge&logo=vercel&logoColor=black)](https://cybermachina-neural-twin.vercel.app/)
-![Vite](https://img.shields.io/badge/Frontend-React%20%2B%20Vite-blue?style=flat-square)
-![Plotly](https://img.shields.io/badge/Visualization-Plotly.js-ff0055?style=flat-square)
-
 > 1D CNN-LSTM Edge Execution Engine & Digital Twin for Predictive Maintenance in CNC Milling
 
-🔗 **Access the Live Production Dashboard:** [https://cybermachina-neural-twin.vercel.app/](https://cybermachina-neural-twin.vercel.app/)
-
----
+![Dashboard Preview](https://img.shields.io/badge/Status-Production%20Ready-00f0ff?style=flat-square)
+![Vite](https://img.shields.io/badge/Frontend-React%20%2B%20Vite-blue?style=flat-square)
+![Plotly](https://img.shields.io/badge/Visualization-Plotly.js-ff0055?style=flat-square)
 
 ## 🚀 Overview
 
@@ -42,7 +38,7 @@
    git clone [https://github.com/your-username/cybermachina-neural-twin.git](https://github.com/your-username/cybermachina-neural-twin.git)
    cd cybermachina-neural-twin/frontend
 
-2. Install all required project dependencies: 
+2. Install all required project dependencies
 npm install
 3. Run the local development server:
 npm run dev

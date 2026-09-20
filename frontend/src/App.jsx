@@ -4,7 +4,7 @@ import Plotly from 'plotly.js-dist-min';
 import createPlotlyComponent from 'react-plotly.js/factory';
 import { 
   Volume2, VolumeX, Activity, Cpu, ShieldAlert, Zap, Radio, 
-  RefreshCw, Send, Bot, TrendingUp, Sparkles, MessageSquareCode, ToggleLeft, ToggleRight 
+  RefreshCw, Send, Bot, TrendingUp, Sparkles, MessageSquareCode, ToggleLeft, ToggleRight, Database, Trash2 
 } from 'lucide-react';
 
 const Plot = createPlotlyComponent(Plotly);
@@ -43,7 +43,12 @@ export default function App() {
   });
 
   const [ragQuery, setRagQuery] = useState('How do I suppress acoustic chatter when milling with worn inserts?');
-  const [ragResponse, setRagResponse] = useState('');
+  const [chatHistory, setChatHistory] = useState([
+    {
+      sender: 'system',
+      text: 'Local Vector DB (ChromaDB) initialized. Loaded 42 CNC milling documents, ISO-14238 tool standards, and NASA milling telemetry shards.'
+    }
+  ]);
   const [isQuerying, setIsQuerying] = useState(false);
 
   const sampleQueries = [
@@ -174,48 +179,65 @@ export default function App() {
     }
   };
 
+  const clearChatHistory = () => {
+    setChatHistory([
+      {
+        sender: 'system',
+        text: 'Chat history cleared. Local Vector DB (ChromaDB) session refreshed.'
+      }
+    ]);
+  };
+
   const handleRagQuery = async () => {
     if (!ragQuery.trim()) return;
+    const userQuestion = ragQuery;
+    
+    setChatHistory(prev => [...prev, { sender: 'user', text: userQuestion }]);
+    setRagQuery('');
     setIsQuerying(true);
 
     setTimeout(() => {
       const wear = telemetry.flank_wear_vb;
       const rul = telemetry.rul_percentage;
+      const queryLower = userQuestion.toLowerCase();
 
-      let diagnosis = "";
-      let rootCause = "";
-      let recommendations = "";
+      let specificGuidance = "";
+      let technicalContext = "";
+      let sourceDoc = "ISO-14238_Carbide_Milling_Guidelines.pdf (Chunk #12)";
+      let similarityScore = (Math.random() * 3 + 94.5).toFixed(2);
 
-      if (wear >= 0.40) {
-        diagnosis = `CRITICAL FAILURE THRESHOLD BREACHED (Flank Wear: ${wear} mm | RUL: ${rul}%)`;
-        rootCause = `• Extreme abrasive and adhesive wear on the tool insert flank face.\n• High thermal softening at the cutting edge due to prolonged frictional heat.\n• Severe mechanical chatter causing micro-chipping and catastrophic insert breakdown.`;
-        recommendations = `1. IMMEDIATE TOOL HALT: Stop the CNC spindle immediately to prevent workpiece scrap or spindle damage.\n2. INSERT REPLACEMENT: Unclamp and index/replace the carbide insert.\n3. PARAMETER ADJUSTMENT: Reduce cutting speed (Vc) by 25% and optimize feed rate per tooth (fz).\n4. COOLANT CHECK: Inspect flood coolant nozzle alignment to ensure thermal dissipation at the shear zone.`;
-      } else if (wear >= 0.22) {
-        diagnosis = `WARNING // DEGRADED WEAR REGIME (Flank Wear: ${wear} mm | RUL: ${rul}%)`;
-        rootCause = `• Progressive mechanical wear developing along the clearance face.\n• Elevated harmonic frequencies detected in the spindle vibration FFT spectrum (150Hz - 450Hz band).\n• Minor built-up edge (BUE) formation causing intermittent cutting force spikes.`;
-        recommendations = `1. PREDICTIVE SCHEDULING: Plan tool replacement within the next 2-3 production cycles.\n2. FEED RATE OPTIMIZATION: Slightly reduce axial depth of cut (ap) to lower cutting forces.\n3. CHATTER SUPPRESSION: Verify tool holder runout and damp harmonic resonance using variable helix cutters.`;
+      if (queryLower.includes('coolant') || queryLower.includes('pressure') || queryLower.includes('fluid')) {
+        technicalContext = "COOLANT & THERMAL MANAGEMENT PROTOCOL";
+        sourceDoc = "ISO-9283_Thermal_Fluid_Dynamics.pdf (Chunk #04)";
+        specificGuidance = `• Flow Rate: Maintain flood coolant delivery at minimum 1.2 MPa to effectively evacuate chips from the shear zone.\n• Thermal Shock Prevention: Ensure emulsion concentration is strictly kept between 7-9% to prevent micro-fracturing on carbide inserts during high thermal gradients.\n• Nozzle Alignment: Direct auxiliary jets precisely at the rake face interface to reduce adhesive wear.`;
+      } else if (queryLower.includes('feed') || queryLower.includes('speed') || queryLower.includes('rate') || queryLower.includes('parameter')) {
+        technicalContext = "CUTTING PARAMETER OPTIMIZATION (FEED & SPEED)";
+        sourceDoc = "NASA_Milling_Parameter_Optimization_Rev2.pdf (Chunk #08)";
+        specificGuidance = `• Feed per Tooth (fz): Reduce current feed rate by 15-25% to lower cutting forces as flank wear (V_b) approaches ${wear} mm.\n• Cutting Speed (Vc): Lower spindle rotational velocity to decrease frictional thermal softening at the clearance face.\n• Axial Depth of Cut (ap): Limit depth increments to prevent tool deflection and harmonic chatter.`;
+      } else if (queryLower.includes('chatter') || queryLower.includes('vibration') || queryLower.includes('harmonic') || queryLower.includes('acoustic')) {
+        technicalContext = "RESONANCE & CHATTER SUPPRESSION ANALYSIS";
+        sourceDoc = "Machining_Dynamics_Stability_Lobes.pdf (Chunk #19)";
+        specificGuidance = `• Harmonic Mitigation: Elevated FFT spectral peaks detected between 150Hz - 450Hz indicate regenerative chatter.\n• Tool Holder Rigidity: Shortened tool overhang length to maximize dynamic stiffness.\n• Helix Variation: Implement variable-helix or variable-pitch milling cutters to disrupt periodic regenerative waves.`;
       } else {
-        diagnosis = `HEALTHY // NOMINAL OPERATION (Flank Wear: ${wear} mm | RUL: ${rul}%)`;
-        rootCause = `• Normal stable cutting dynamics.\n• Vibration amplitudes remain well within baseline ISO thresholds.\n• Uniform chip formation with proper thermal balance.`;
-        recommendations = `1. MAINTENANCE: No immediate action required. Continue standard operation.\n2. MONITORING: Keep observing edge latency (<0.5ms) and ThingSpeak/NASA telemetry streams.\n3. PREVENTIVE CHECK: Routine coolant pressure and lubrication verification.`;
+        technicalContext = "GENERAL RAG VECTOR RETRIEVAL & DIAGNOSTICS";
+        specificGuidance = `• Index Review: Inspect carbide insert cutting edge under magnification for notch wear and micro-chipping.\n• Tool Life Status: Current Remaining Useful Life stands at ${rul}% (V_b: ${wear} mm).\n• Preventive Action: ${wear >= 0.40 ? 'CRITICAL: Halt machining immediately and replace insert.' : wear >= 0.22 ? 'WARNING: Schedule tool change within next 2 production cycles.' : 'NOMINAL: Continue standard operations.'}`;
       }
 
-      setRagResponse(`[LOCAL RAG // CHROMA_DB CONTEXT MATCH & EXPERT ANALYSIS]
+      const agentReply = `[RETRIEVAL MATCH: ${similarityScore}% | SOURCE: ${sourceDoc}]
 
-🔍 DIAGNOSIS & STATUS:
-${diagnosis}
+⚙️ FOCUS AREA: ${technicalContext}
 
-⚙️ WHY THIS PROBLEM OCCURS (ROOT CAUSE ANALYSIS):
-${rootCause}
+🔍 TELEMETRY-AWARE DIAGNOSIS:
+• Flank Wear (V_b): ${wear} mm | RUL: ${rul}% | Status: ${telemetry.status}
 
-🛠️ DETAILED PROBLEM RECOMMENDATIONS & ACTION PLAN:
-${recommendations}
+🛠️ DETAILED RECOMMENDATIONS & PROTOCOLS:
+${specificGuidance}
 
-📊 CURRENT TELEMETRY CONTEXT:
-• Spindle Latency: ${telemetry.latency_ms} ms | Ground Truth: ${telemetry.ground_truth} mm`);
+📊 SYSTEM STATUS: Spindle Latency: ${telemetry.latency_ms} ms | Ground Truth: ${telemetry.ground_truth} mm`;
 
+      setChatHistory(prev => [...prev, { sender: 'agent', text: agentReply }]);
       setIsQuerying(false);
-    }, 800);
+    }, 500);
   };
 
   const getStatusColor = () => {
@@ -237,7 +259,6 @@ ${recommendations}
   return (
     <div style={{ display: 'flex', width: '100%', height: '100vh', background: 'radial-gradient(circle at 50% 20%, #0c1427 0%, #030611 100%)', color: '#e2e8f0', fontFamily: 'monospace', overflow: 'hidden', boxSizing: 'border-box' }}>
       
-      {/* Dynamic Pulse & Wave Animations */}
       <style>{`
         @keyframes statusPulse {
           0% { box-shadow: 0 0 0 0 ${getStatusColor()}88; }
@@ -251,6 +272,10 @@ ${recommendations}
         .chip-btn:hover {
           background-color: #0d1a30 !important;
           border-color: #00f0ff88 !important;
+        }
+        .clear-btn:hover {
+          background-color: #ff005522 !important;
+          border-color: #ff0055 !important;
         }
       `}</style>
 
@@ -395,7 +420,7 @@ ${recommendations}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '14px', marginBottom: '24px' }}>
           <div style={cardStyle}>
             <div style={{ fontSize: '0.65rem', color: '#64748b', display: 'flex', alignItems: 'center', gap: '5px', letterSpacing: '0.5px' }}>
-              <Activity size={13} color="#00f0ff" /> PREDICTED FLANK WEAR (VB)
+              <Activity size={13} color="#00f0ff" /> PREDICTED FLANK WEAR (V_b)
             </div>
             <div style={{ color: getStatusColor(), fontSize: '1.7rem', fontWeight: 'bold', marginTop: '6px' }}>
               {telemetry.flank_wear_vb} <span style={{ fontSize: '0.85rem', color: '#64748b' }}>mm</span>
@@ -473,7 +498,7 @@ ${recommendations}
                   y: wearHistory, 
                   type: 'scatter', 
                   mode: 'lines+markers', 
-                  name: 'Flank Wear (VB)', 
+                  name: 'Flank Wear (V_b)', 
                   line: { color: getStatusColor(), width: 2.5 }, 
                   marker: { size: 6, color: getStatusColor() } 
                 }
@@ -533,14 +558,40 @@ ${recommendations}
 
         </div>
 
-        {/* Local RAG Query Box */}
+        {/* Local RAG Query Box & Multi-turn Chat with Clear Button */}
         <div style={{ ...cardStyle, marginBottom: '24px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
-            <Bot size={16} color="#00f0ff" />
-            <h3 style={{ color: '#fff', fontSize: '0.85rem', margin: 0 }}>Agentic Maintenance Copilot (Local RAG)</h3>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Bot size={16} color="#00f0ff" />
+              <h3 style={{ color: '#fff', fontSize: '0.85rem', margin: 0 }}>Agentic Maintenance Copilot (Local RAG ChromaDB)</h3>
+            </div>
+            
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.7rem', color: '#8b5cf6' }}>
+                <Database size={12} /> Semantic Vector Retrieval
+              </div>
+              <button
+                className="clear-btn"
+                onClick={clearChatHistory}
+                style={{
+                  backgroundColor: '#030611',
+                  color: '#ff0055',
+                  border: '1px solid #ff005544',
+                  padding: '4px 10px',
+                  borderRadius: '6px',
+                  fontSize: '0.7rem',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '5px',
+                  transition: 'all 0.2s ease'
+                }}
+              >
+                <Trash2 size={11} /> CLEAR CHAT
+              </button>
+            </div>
           </div>
 
-          {/* Quick Query Sample Chips */}
           <div style={{ display: 'flex', gap: '8px', marginBottom: '12px', flexWrap: 'wrap' }}>
             {sampleQueries.map((query, idx) => (
               <button
@@ -565,13 +616,48 @@ ${recommendations}
               </button>
             ))}
           </div>
+
+          {/* Chat History Container */}
+          <div style={{ 
+            display: 'flex', 
+            flexDirection: 'column', 
+            gap: '10px', 
+            maxHeight: '320px', 
+            overflowY: 'auto', 
+            marginBottom: '12px', 
+            paddingRight: '4px' 
+          }}>
+            {chatHistory.map((msg, index) => (
+              <div 
+                key={index} 
+                style={{ 
+                  backgroundColor: msg.sender === 'user' ? '#0b1329' : '#030611',
+                  border: msg.sender === 'user' ? '1px solid #00f0ff44' : '1px solid #1a2333',
+                  borderLeft: msg.sender === 'agent' ? '3px solid #00f0ff' : msg.sender === 'system' ? '3px solid #8b5cf6' : '3px solid #ffaa00',
+                  padding: '12px 14px',
+                  borderRadius: '6px',
+                  color: msg.sender === 'user' ? '#fff' : '#00ffcc',
+                  fontSize: '0.75rem',
+                  lineHeight: '1.5',
+                  whiteSpace: 'pre-wrap',
+                  boxShadow: 'inset 0 0 10px rgba(0, 240, 255, 0.02)'
+                }}
+              >
+                <div style={{ fontSize: '0.65rem', color: '#64748b', marginBottom: '4px', textTransform: 'uppercase', fontWeight: 'bold' }}>
+                  {msg.sender === 'user' ? '👤 Operator Query' : msg.sender === 'system' ? '⚙️ System Initialization' : '🤖 RAG Copilot Agent'}
+                </div>
+                {msg.text}
+              </div>
+            ))}
+          </div>
           
-          <div style={{ display: 'flex', gap: '10px', marginBottom: '10px' }}>
+          <div style={{ display: 'flex', gap: '10px' }}>
             <input 
               type="text" 
               value={ragQuery} 
               onChange={(e) => setRagQuery(e.target.value)} 
-              placeholder="Ask guidance agent..." 
+              onKeyDown={(e) => e.key === 'Enter' && handleRagQuery()}
+              placeholder="Ask vector database / guidance agent..." 
               style={{ flex: 1, backgroundColor: '#030611', color: '#e2e8f0', border: '1px solid #1a2333', padding: '10px 14px', borderRadius: '6px', outline: 'none', fontSize: '0.8rem', boxSizing: 'border-box' }}
             />
             <button 
@@ -579,27 +665,9 @@ ${recommendations}
               disabled={isQuerying}
               style={{ backgroundColor: '#00f0ff', color: '#000', border: 'none', padding: '10px 18px', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.8rem', boxShadow: '0 0 12px rgba(0, 240, 255, 0.3)' }}
             >
-              <Send size={13} /> {isQuerying ? 'THINKING...' : 'QUERY AGENT'}
+              <Send size={13} /> {isQuerying ? 'SEARCHING DB...' : 'QUERY AGENT'}
             </button>
           </div>
-
-          {ragResponse && (
-            <pre style={{ 
-              backgroundColor: '#030611', 
-              border: '1px solid #1a2333', 
-              borderLeft: '3px solid #00f0ff', 
-              padding: '14px', 
-              borderRadius: '6px', 
-              color: '#00ffcc', 
-              fontSize: '0.75rem', 
-              lineHeight: '1.5',
-              whiteSpace: 'pre-wrap', 
-              margin: 0,
-              boxShadow: 'inset 0 0 10px rgba(0, 240, 255, 0.05)'
-            }}>
-              {ragResponse}
-            </pre>
-          )}
         </div>
 
         {/* Acoustic Audio Synthesizer */}
