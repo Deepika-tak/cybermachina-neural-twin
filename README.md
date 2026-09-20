@@ -1,5 +1,8 @@
 # CyberMachina // Neural CNC Twin
 
+## 🚀 Live Demo
+* **Live Dashboard:** [https://cybermachina-neural-twin.vercel.app/](https://cybermachina-neural-twin.vercel.app/)
+
 > 1D CNN-LSTM Edge Execution Engine & Digital Twin for Predictive Maintenance in CNC Milling
 
 ![Dashboard Preview](https://img.shields.io/badge/Status-Production%20Ready-00f0ff?style=flat-square)
